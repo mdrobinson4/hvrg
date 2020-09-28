@@ -1,3 +1,19 @@
+# install ros_bridge
+sudo apt-get install ros-melodic-rosbridge-server
+
+# install rosserial
+sudo apt-get install ros-melodic-rosserial-arduino
+sudo apt-get install ros-melodic-rosserial
+cd <ws>/src
+git clone https://github.com/ros-drivers/rosserial.git
+cd <ws>
+catkin_make
+catkin_make install
+cd <sketchbook>/libraries
+rm -rf ros_lib
+rosrun rosserial_arduino make_libraries.py .
+
+
 roslaunch rosbridge_server rosbridge_websocket.launch # allows low-latency, bidirectional communication layer between clients (web browsers) and servers
 rosrun rqt_graph rqt_graph
 
@@ -18,7 +34,7 @@ rosrun rosserial_arduino serial_node.py _port:=/dev/ttyS3
 # listen to a topic
 rostopic echo chatter
 
-# setup workspace
+# setup workspacecatkin
 source /opt/ros/melodic/setup.bash
 mkdir -p /catkin_ws/src
 cd /catkin_ws/
@@ -53,3 +69,9 @@ chmod +x talker.py
 catkin_install_python(PROGRAMS scripts/talker.py scripts/listener.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+
+
+
+
+
