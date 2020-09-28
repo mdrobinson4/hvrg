@@ -3,7 +3,7 @@ rosrun rqt_graph rqt_graph
 
 catkin_make
 source ./devel/setup.bash
-rosrun [] talker.py
+rosrun beginner_tutorials talker.py
 
 # Arduino ros <-> [ros_bridge] <-> unity (ros-sharp)
 # a collection of nodes and programs that are pre-requisites of a ROS-based system. 
@@ -17,3 +17,39 @@ rosrun rosserial_arduino serial_node.py _port:=/dev/ttyS3
 
 # listen to a topic
 rostopic echo chatter
+
+# setup workspace
+source /opt/ros/melodic/setup.bash
+mkdir -p /catkin_ws/src
+cd /catkin_ws/
+catkin_make
+source devel/setup.bash
+echo $ROS_PACKAGE_PATH
+
+# create package
+cd /catkin_ws/src
+catkin_create_pkg beginner_tutorials std_msgs rospy roscpp
+cd /catkin_ws
+catkin_make
+rospack depends1 beginner_tutorials 
+
+# build package
+# In a catkin workspace
+catkin_make
+catkin_make install  # (optionally)
+cd ~/catkin_ws/
+ls src
+catkin_make
+
+# create nodes
+roscd beginner_tutorials
+mkdir scripts
+cd scripts
+wget https://raw.github.com/ros/ros_tutorials/kinetic-devel/rospy_tutorials/001_talker_listener/talker.py
+chmod +x talker.py
+# Add the following to your CMakeLists.txt. This makes sure the python script gets installed properly, 
+# and uses the right python interpreter.
+
+catkin_install_python(PROGRAMS scripts/talker.py scripts/listener.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
