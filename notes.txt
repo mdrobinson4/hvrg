@@ -1,0 +1,19 @@
+roslaunch rosbridge_server rosbridge_websocket.launch # allows low-latency, bidirectional communication layer between clients (web browsers) and servers
+rosrun rqt_graph rqt_graph
+
+catkin_make
+source ./devel/setup.bash
+rosrun [] talker.py
+
+# Arduino ros <-> [ros_bridge] <-> unity (ros-sharp)
+# a collection of nodes and programs that are pre-requisites of a ROS-based system. 
+# roscore is used to allow ROS nodes to communicate. roslaunch automatically launches roscore
+roscore
+
+# list all of the topics
+rostopic list
+
+rosrun rosserial_arduino serial_node.py _port:=/dev/ttyS3
+
+# listen to a topic
+rostopic echo chatter
