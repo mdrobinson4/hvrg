@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using UnityEngine.Events;
 using System.Threading;
+using RosSharp.RosBridgeClient;
 
 namespace Valve.VR.InteractionSystem
 {
@@ -20,6 +21,11 @@ namespace Valve.VR.InteractionSystem
     //-------------------------------------------------------------------------
     public class Hand : MonoBehaviour
     {
+	//[SerializeField]
+	public GameObject wrist;
+	void Awake() {
+	    wrist = GameObject.FindObjectOfType<RosConnector> ();
+        }
         // The flags used to determine how an object is attached to the hand.
         [Flags]
         public enum AttachmentFlags
@@ -113,6 +119,10 @@ namespace Valve.VR.InteractionSystem
                 return (attachmentFlags & flag) == flag;
             }
         }
+
+	public void updatePose() {
+
+	}
 
         private List<AttachedObject> attachedObjects = new List<AttachedObject>();
 
