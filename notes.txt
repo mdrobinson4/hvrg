@@ -29,7 +29,7 @@ roscore
 # list all of the topics
 rostopic list
 
-rosrun rosserial_arduino serial_node.py _port:=/dev/ttyS3
+rosrun rosserial_arduino serial_node.py _port:=/dev/ttyACM0
 
 # listen to a topic
 rostopic echo chatter
@@ -70,8 +70,17 @@ catkin_install_python(PROGRAMS scripts/talker.py scripts/listener.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
+// needed unity subscribers
+std_msgs::Int16MultiArray finger_vals;
+std_msgs::Int16 middle_vals;
+geometry_msgs::Vector3 imuForearm;
+geometry_msgs::Vector3 imuUpperarm;
+geometry_msgs::Vector3 imuWrist;
 
+geometry_msgs::Quaternion imuUpperarmQ;
+geometry_msgs::Quaternion imuForearmQ;
+geometry_msgs::Quaternion imuWristQ;
 
-
+std_msgs::Int16 cal;
 
 
