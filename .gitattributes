@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+#*.psd filter=lfs diff=lfs merge=lfs -text
+unity_project/Library/ArtifactDB.bin filter=lfs diff=lfs merge=lfs -text
+unity_project/Library/ArtifactDB filter=lfs diff=lfs merge=lfs -text
