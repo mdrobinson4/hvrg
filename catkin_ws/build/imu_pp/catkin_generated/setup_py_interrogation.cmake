@@ -1,0 +1,6 @@
+set(imu_pp_SETUP_PY_VERSION "0.0.0")
+set(imu_pp_SETUP_PY_SCRIPTS "")
+set(imu_pp_SETUP_PY_PACKAGES "imu_pp")
+set(imu_pp_SETUP_PY_PACKAGE_DIRS "src/imu_pp")
+set(imu_pp_SETUP_PY_MODULES "")
+set(imu_pp_SETUP_PY_MODULE_DIRS "")

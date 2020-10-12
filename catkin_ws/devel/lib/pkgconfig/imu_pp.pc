@@ -1,0 +1,8 @@
+prefix=/home/softrobot/mark/hvrg/catkin_ws/devel
+
+Name: imu_pp
+Description: Description of imu_pp
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/softrobot/mark/hvrg/catkin_ws/devel/lib 
+Requires: 

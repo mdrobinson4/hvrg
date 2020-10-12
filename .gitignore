@@ -31,5 +31,3 @@
 *.out
 *.app
 
-/catkin_ws
-/install
