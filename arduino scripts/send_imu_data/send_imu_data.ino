@@ -11,14 +11,16 @@
 #include <geometry_msgs/Quaternion.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/Vector3Stamped.h>
+#include <geometry_msgs/QuaternionStamped.h>
 
 //imu
 Adafruit_BNO055 bnoWrist = Adafruit_BNO055(55);
 
 // global variables to pusblish
-geometry_msgs::Quaternion orientation;
-geometry_msgs::Quaternion linearAcceleration;
-geometry_msgs::Quaternion angularVelocity;
+geometry_msgs::QuaternionStamped orientation;
+geometry_msgs::Vector3Stamped linearAcceleration;
+geometry_msgs::Vector3Stamped angularVelocity;
 std_msgs::Int16MultiArray finger_vals;
 
 // ros node
@@ -45,21 +47,14 @@ void setup(void) {
   finger_vals.data = (int *)malloc(sizeof(int)*5);
   
   /* Initialise the sensor */
-  if(!bnoWrist.begin())
+    if(!bnoWrist.begin())
   {
     /* There was a problem detecting the BNO055 ... check your connections */
     nh.loginfo("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
     while(1);
   }
+  nh.loginfo("let's go!!");
   delay(1000);
-    
-  /* Initialise the sensor */
-  if (!bnoWrist.begin())
-  {
-    /* There was a problem detecting the BNO055 ... check your connections */
-    Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
-    while (1);
-  }
   
   bnoWrist.setExtCrystalUse(true);
 }
@@ -79,14 +74,16 @@ void loop(void) {
   bnoWrist.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
 
   // convert angular velocity data
-  angularVelocity.x = angVelocityData.gyro.x;
-  angularVelocity.y = angVelocityData.gyro.y;
-  angularVelocity.z = angVelocityData.gyro.z;
+  angularVelocity.vector.x = angVelocityData.gyro.x;
+  angularVelocity.vector.y = angVelocityData.gyro.y;
+  angularVelocity.vector.z = angVelocityData.gyro.z;
+  angularVelocity.header.stamp = nh.now();
 
   // convert linear acceleration data
-  linearAcceleration.x = linearAccelData.acceleration.x;
-  linearAcceleration.y = linearAccelData.acceleration.y;
-  linearAcceleration.z = linearAccelData.acceleration.z;
+  linearAcceleration.vector.x = linearAccelData.acceleration.x;
+  linearAcceleration.vector.y = linearAccelData.acceleration.y;
+  linearAcceleration.vector.z = linearAccelData.acceleration.z;
+  linearAcceleration.header.stamp = nh.now();
   
   // publish imu data for dead reckoning
   orientation_pub.publish(&orientation);   
@@ -94,7 +91,7 @@ void loop(void) {
   linearAccel_pub.publish(&linearAcceleration);
 
   // publish finger values
-  fingerVals_pub.publish(&finger_vals);
+  //fingerVals_pub.publish(&finger_vals);
   
   nh.spinOnce();
   delay(10);
@@ -102,10 +99,11 @@ void loop(void) {
 
 void updateOrientation() {
   imu::Quaternion quat = bnoWrist.getQuat();
-  orientation.x = quat.x();
-  orientation.y = quat.y();
-  orientation.z = quat.z();
-  orientation.w = quat.w();
+  orientation.quaternion.x = quat.x();
+  orientation.quaternion.y = quat.y();
+  orientation.quaternion.z = quat.z();
+  orientation.quaternion.w = quat.w();
+  orientation.header.stamp = nh.now();
 }
 
 void updateFingerVals() {
