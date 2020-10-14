@@ -1,4 +1,6 @@
 #include <ros.h>
+#include <std_msgs/Int16.h>
+#include <std_msgs/Int16MultiArray.h>
 #include <geometry_msgs/Vector3.h>
 #include <geometry_msgs/Quaternion.h>
 #include <Wire.h>
@@ -10,30 +12,38 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
 
-#define pi 3.14159265
-
-geometry_msgs::Vector3 imuWristE;
-geometry_msgs::Quaternion imuWristQ;
-geometry_msgs::Pose wristPose;
-geometry_msgs::Point wristPosition;
+//imu
 Adafruit_BNO055 bnoWrist = Adafruit_BNO055(55);
 
-uint16_t BNO055_SAMPLERATE_DELAY_MS = 10; //how often to read data from the board
-double ACCEL_VEL_TRANSITION =  (double)(BNO055_SAMPLERATE_DELAY_MS) / 1000.0;
-double ACCEL_POS_TRANSITION = 0.5 * ACCEL_VEL_TRANSITION * ACCEL_VEL_TRANSITION;
+// global variables to pusblish
+geometry_msgs::Quaternion orientation;
+geometry_msgs::Quaternion linearAcceleration;
+geometry_msgs::Quaternion angularVelocity;
+std_msgs::Int16MultiArray finger_vals;
 
-
+// ros node
 ros::NodeHandle nh;
 
-ros::Publisher imuWristE_pub("imuWristE", &imuWristE);
-ros::Publisher imuWristQ_pub("imuWristQ", &imuWristQ);
-ros::Publisher wristPose_pub("wristPose", &wristPose);
+// setup publishers
+ros::Publisher orientation_pub("orientation", &orientation);
+ros::Publisher linearAccel_pub("linear_accel", &linearAcceleration);
+ros::Publisher angularVel_pub("angular_vel", &angularVelocity);
+ros::Publisher fingerVals_pub("finger_vals", &finger_vals);
      
 void setup(void) {
   nh.initNode();
-  nh.advertise(imuWristE_pub);
-  nh.advertise(imuWristQ_pub);
-  nh.advertise(wristPose_pub);
+  nh.advertise(orientation_pub);
+  nh.advertise(linearAccel_pub);
+  nh.advertise(angularVel_pub);
+
+  // initialize finger array
+  finger_vals.data_length = 5;
+  finger_vals.layout.dim[0].label = "finger_vals";
+  finger_vals.layout.dim[0].size = 5;
+  finger_vals.layout.dim[0].stride = 1*5;
+  finger_vals.layout.data_offset = 0;
+  finger_vals.data = (int *)malloc(sizeof(int)*5);
+  
   /* Initialise the sensor */
   if(!bnoWrist.begin())
   {
@@ -43,57 +53,73 @@ void setup(void) {
   }
   delay(1000);
     
-  bool flag = false;
-  while (flag == false) {
-    if (!bnoWrist.begin()) {
-      nh.loginfo("No BN0055 detected, kill yourself!");
-    }
-    else {
-      nh.loginfo("Let's goo!!!");
-      flag = true;
-    }
+  /* Initialise the sensor */
+  if (!bnoWrist.begin())
+  {
+    /* There was a problem detecting the BNO055 ... check your connections */
+    Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+    while (1);
   }
+  
   bnoWrist.setExtCrystalUse(true);
 }
      
 void loop(void) {
-  // get the quaternion (x,y,z,w) of the imu located on wrist
-  imu::Quaternion imuWrist = bnoWrist.getQuat();
-  getPosition();
+  // update finger positions
+  updateFingerVals();
   
-  imuWristE = quat2eul(imuWrist);
-  imuWristQ = getRosQ(imuWrist);
-  wristPose.orientation = imuWristQ;
-  wristPose.position = wristPosition;
+  // compute orientation
+  updateOrientation();
 
-  imuWristQ_pub.publish(&imuWristQ);   
-  imuWristE_pub.publish(&imuWristE);   
-  wristPose_pub.publish(&wristPose);
+  // sensor variables
+  sensors_event_t angVelocityData , linearAccelData;
+  
+  // get gyro and accelerometer data
+  bnoWrist.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
+  bnoWrist.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
+
+  // convert angular velocity data
+  angularVelocity.x = angVelocityData.gyro.x;
+  angularVelocity.y = angVelocityData.gyro.y;
+  angularVelocity.z = angVelocityData.gyro.z;
+
+  // convert linear acceleration data
+  linearAcceleration.x = linearAccelData.acceleration.x;
+  linearAcceleration.y = linearAccelData.acceleration.y;
+  linearAcceleration.z = linearAccelData.acceleration.z;
+  
+  // publish imu data for dead reckoning
+  orientation_pub.publish(&orientation);   
+  angularVel_pub.publish(&angularVelocity);   
+  linearAccel_pub.publish(&linearAcceleration);
+
+  // publish finger values
+  fingerVals_pub.publish(&finger_vals);
+  
   nh.spinOnce();
   delay(10);
 }
 
-void getPosition() {
-  sensors_event_t linearAccelData;
-  bnoWrist.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
-  wristPosition.x = wristPosition.x + ACCEL_POS_TRANSITION * linearAccelData.acceleration.x;
-  wristPosition.y = wristPosition.y + ACCEL_POS_TRANSITION * linearAccelData.acceleration.y;
-  wristPosition.z = wristPosition.z + ACCEL_POS_TRANSITION * linearAccelData.acceleration.z;
-  
+void updateOrientation() {
+  imu::Quaternion quat = bnoWrist.getQuat();
+  orientation.x = quat.x();
+  orientation.y = quat.y();
+  orientation.z = quat.z();
+  orientation.w = quat.w();
 }
 
-geometry_msgs::Quaternion getRosQ(imu::Quaternion imuWrist) {
-  imuWristQ.x = imuWrist.x();
-  imuWristQ.y = imuWrist.y();
-  imuWristQ.z = imuWrist.z();
-  imuWristQ.w = imuWrist.w();
-  return imuWristQ;
-}
+void updateFingerVals() {
+  int fingers[5];
 
-geometry_msgs::Vector3 quat2eul(imu::Quaternion q) {
-  imu::Vector<3> eul = q.toEuler();
-  geometry_msgs::Vector3 imuEul;
-  imuEul.x = eul.x() * (180 / pi);
-  imuEul.y = eul.y() * (180 / pi);
-  imuEul.z = eul.z() * (180 / pi);
+  // read haptive glove finger positions
+  fingers[0] = analogRead(A2);
+  fingers[1] = analogRead(A1);
+  fingers[2] = analogRead(A0);
+
+  // store values in ros multiarray
+  finger_vals.data[0] = fingers[0];
+  finger_vals.data[1] = fingers[1];
+  finger_vals.data[2] = fingers[2];
+  finger_vals.data[3] = fingers[2];
+  finger_vals.data[4] = fingers[2];
 }
