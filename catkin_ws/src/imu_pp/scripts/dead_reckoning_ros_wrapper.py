@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import rospy
+import math
 import message_filters
 from imu_pp.deadReckoning import DeadReckoning
 from  geometry_msgs.msg import Vector3Stamped, QuaternionStamped, Point
@@ -16,19 +17,14 @@ class DeadReckoningROSWRapper:
         
         self.ts = message_filters.ApproximateTimeSynchronizer([self.linearAccelSub, self.angularVelSub, self.orientationSub], 10, 0.1)
         self.ts.registerCallback(self.imuCallback)
-        print(self.ts)
     
     def stop(self):
         self.deadReckoning.stop()
     
     def imuCallback(self, linearAccel, angularVel, orientation):
-        print('linearAccel')
-        print(linearAccel)
-        print('angularVel')
-        print(angularVel)
-        print('orientation')
-        print(orientation)
-        #self.deadReckoning.updatePose(linearAccel, angularVel, orientation)
+        tme = linearAccel.header.stamp.secs + linearAccel.header.stamp.nsecs * math.pow(10, -9)
+        #print('{:.23f}'.format(tme))
+        self.deadReckoning.updatePose(linearAccel.vector, angularVel.vector, orientation.quaternion, tme)
 
 if __name__ == "__main__":
     # initialize ros node
